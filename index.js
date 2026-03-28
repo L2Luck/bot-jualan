@@ -6,13 +6,27 @@ const {
 } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 
-const { AUTH_FOLDER, DATA_FOLDER, DB_FILE, LEGACY_JSON_DB_FILE, GEMINI_API_KEY } = require('./config/appConfig');
-const { ensureDatabase, simpanPesanan } = require('./services/database');
-const { createAIService } = require('./services/aiService');
+const {
+	AUTH_FOLDER,
+	DATA_FOLDER,
+	DB_FILE,
+	LEGACY_JSON_DB_FILE,
+	GEMINI_API_KEY,
+	MENU_POSTER_PATH,
+	QRIS_IMAGE_PATH,
+	PAYMENT_PROOF_FOLDER,
+	OWNER_PHONE_NUMBER
+} = require('./config/appConfig');
+const {
+	ensureDatabase,
+	simpanPesanan,
+	simpanBuktiPembayaran,
+	getBuktiPembayaranTerakhirByNomor,
+	getBuktiPembayaranTerbaru,
+	checkIsFirstTimeUser
+} = require('./services/database');
 const { createConnectionHandler } = require('./handlers/connectionHandler');
 const { createMessageHandler } = require('./handlers/messageHandler');
-
-const aiService = createAIService(GEMINI_API_KEY);
 
 async function startBot() {
 	await ensureDatabase(DATA_FOLDER, DB_FILE, LEGACY_JSON_DB_FILE);
@@ -57,9 +71,17 @@ async function startBot() {
 	const onMessageUpsert = createMessageHandler({
 		sock,
 		simpanPesanan,
+		simpanBuktiPembayaran,
+		getBuktiPembayaranTerakhirByNomor,
+		getBuktiPembayaranTerbaru,
+		checkIsFirstTimeUser,
 		dbFile: DB_FILE,
-		jawabPertanyaanToko: aiService.jawabPertanyaanToko,
-		getBotStatus
+		authFolder: AUTH_FOLDER,
+		getBotStatus,
+		ownerPhoneNumber: OWNER_PHONE_NUMBER,
+		menuPosterPath: MENU_POSTER_PATH,
+		qrisImagePath: QRIS_IMAGE_PATH,
+		paymentProofFolder: PAYMENT_PROOF_FOLDER
 	});
 	sock.ev.on('messages.upsert', onMessageUpsert);
 }
